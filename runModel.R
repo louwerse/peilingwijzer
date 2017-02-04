@@ -120,6 +120,7 @@ workerCount=min(7, as.integer(Sys.getenv("NUMBER_OF_PROCESSORS"))-1)
 w <- makeCluster(workerCount)
 registerDoSNOW(w)
 
+# This will take about 20-30 minutes on a reasonably fast computer (!)
 outputs <- foreach(i=1:length(sourcedata)) %dopar%
   runmodel_mhe(dat=sourcedata[[i]]$dat, 
                sourcedata[[i]]$dat$margin,
