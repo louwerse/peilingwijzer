@@ -1,0 +1,39 @@
+## Script van Simon Jackman, aangepast door Tom Louwerse
+## House weights idea, based on script from Chris Hanretty: https://github.com/chrishanretty/election4castUK/blob/master/src/pool.R
+
+model{
+ ## measurement model
+ for(i in 1:NPOLLS){
+       mu[i] <- alpha[date[i]] + house[org[i],houseperiod[i]]  ## Het gerapporteerde percentage bestaat uit het 'echte' %  en een huiseffect (waarbij 2 perioden worden onderscheiden)
+	   lower[i] <- y2[i] - margin[i]			
+	   upper[i] <- y2[i] + margin[i]
+       y[i] ~ dunif(lower[i],upper[i])			## Het gerapporteerde percentage komt uit een uniforme verdeling (kan ook halve zetel meer of minder zijn)
+	   y2[i] ~ dnorm(mu[i],prec[i])				## Het gerapporteerde percentage (gecorrigeerd voor 'zeteleffect') wordt getrokken uit een normaalverdeling 
+												## met mu als gemiddelde en de standaardfout van de peiling als standaardafwijking
+
+     prec[i] <- 1 / (vari[i] * pie)
+ }
+
+ ## transition model (aka random walk prior)
+ for(i in STARTTRANSITION:NPERIODS){				## STARTTRANSITION = 2 voor alle partijen, behalve nieuwe partijen
+        mu.alpha[i] <- alpha[i-1]				
+        alpha[i] ~ dnorm(mu.alpha[i],tau)T(0,)		## Het 'echte' % van vandaag wordt getrokken uit een normaalverdeling met als gemiddelde
+												    ## het percentage van gisteren en standaardafwijking tau (tau wordt geschat in het model)
+ }
+
+ ## priors
+ tau <- 1/pow(sigma,2)   ## deterministic transform to precision
+ sigma ~ dunif(0,.2)    ## uniform prior on standard deviation
+ pie ~ dunif(0.001, 10)	 ## pollster induced error has uniform prior
+ 
+ ## house effects
+ for(j in 1:NHOUSEPERIODS) {
+	for(i in 1:NHOUSE) {
+		house_us[i,j] ~ dnorm(0, 0.01)
+		house[i,j] <- house_us[i,j] - inprod(house_us[,j], house_weights[,j]) 
+	}
+ }
+	   
+
+	
+}
